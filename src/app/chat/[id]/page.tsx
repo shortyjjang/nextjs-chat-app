@@ -1,30 +1,30 @@
-"use client";
+import { getServerSession } from "next-auth/next";
+import { authOptions, ExtendedSession } from "@/lib/auth";
+import { getRoomInfoPrefetch } from "@/api/getRoomInfo";
+import { redirect } from "next/navigation";
+import ChatRoomProvider from "@/context/ChatRoomProvider";
 
-import { useParams } from "next/navigation";
-import ChatRoom from "@/features/chat/ChatRoom";
-import { useSession } from "next-auth/react";
-import { ExtendedSession } from "@/lib/auth";
-import useJoinChat from "@/hooks/useJoinChat";
-import useAutoExitChat from "@/hooks/useAutoExitChat";
-import { ChatRoomContext, WS_URL } from "@/hooks/useChatRoom";
 
-export default function ChatRoomPage() {
-  const { id } = useParams();
-  const roomId = String(id || "");
-  const { data: sessionData } = useSession();
+export default async function ChatRoomPage({ params }: { params: { id: string } }) {
+  // ✅ params를 먼저 구조 분해
+  const { id: roomId } = params;
+
+  const sessionData = await getServerSession(authOptions);
+
   const session = sessionData as ExtendedSession;
-  const { isJoined, users, fetchUsers } = useJoinChat(
-    session?.user?.id || "",
-    roomId
-  );
-  useAutoExitChat(session?.user?.id || "", roomId);
 
-  return (
-    <ChatRoomContext.Provider value={{ roomId, isJoined, users, fetchUsers, WS_URL }}>
-      {(roomId && session && isJoined) ?
-      <ChatRoom />
-      : <div>채팅방 아이디가 없습니다.</div>}
-    </ChatRoomContext.Provider>
-  );
+  // ✅ session이 없는 경우 로그인 페이지로 리다이렉트
+  if (!session || !session.user?.id) {
+    return redirect("/login");
+  }
+
+
+  // ✅ roomId가 비어있는 경우 404 페이지로 리다이렉트
+  if (!roomId) {
+    return redirect("/chat")
+  }
+
+  const userId = session.user.id;
+  await getRoomInfoPrefetch(roomId, userId);
+  return <ChatRoomProvider roomId={roomId} userId={userId} />;
 }
-

@@ -1,3 +1,4 @@
+import { getLastDialogs } from "@/api/getLastDialogs";
 import { useEffect, useState } from "react";
 
 const MAX_MESSAGE_SIZE = 1024 * 10; // 10KB
@@ -44,9 +45,13 @@ export default function useWebSocket(url: string, token: string, roomId: string)
     const connect = () => {
       ws = new WebSocket(`${url}?token=${token}&roomId=${roomId}`);
 
-      ws.onopen = () => {
+      ws.onopen = async () => {
         setIsConnected(true);
         console.log("WebSocket 연결됨");
+
+        // 채팅방 최근 대화 내역 가져오기
+        const lastDialogs = await getLastDialogs(roomId);
+        setMessages(lastDialogs);
       };
 
       ws.onmessage = (event: MessageEvent) => {

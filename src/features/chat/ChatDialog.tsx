@@ -1,4 +1,4 @@
-import { useChatRoom } from "@/hooks/useChatRoom";
+import { useChatRoom } from "@/context/ChatRoomProvider";
 import Image from "next/image";
 
 export default function ChatDialog({
@@ -11,13 +11,13 @@ export default function ChatDialog({
     url?: string[];
   };
 }) {
-  const { users } = useChatRoom();
+  const { roomInfo } = useChatRoom();
   const Avatar = ({ user_id }: { user_id: string }) => {
-    const user = users.find((user) => user.user_id === user_id);
+    const user = roomInfo.users.find((user) => user.id === user_id);
     if (user) {
       return (
         <div>
-          <Image src={user.avatar} alt="avatar" width={200} height={200} />
+          <Image src={user.image} alt="avatar" width={200} height={200} />
         </div>
       );
     }

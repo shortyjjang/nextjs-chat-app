@@ -23,10 +23,7 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         // 로그인 검증 로직 (예: DB 확인)
-        if (
-          credentials?.email === "test@example.com" &&
-          credentials?.password === "password"
-        ) {
+        if (credentials?.email && credentials?.password) {
           return {
             id: "1",
             name: "Test User",
@@ -44,39 +41,36 @@ export const authOptions: NextAuthOptions = {
   debug: true, // 디버그 모드 활성화
   callbacks: {
     async jwt({ token, user }) {
+      // console.log("🔹 jwt() 콜백에서 받은 token:", token); // 디버깅 로그 추가
+      // console.log("🔹 jwt() 콜백에서 받은 user:", user); // 디버깅 로그 추가
       const now = Math.floor(Date.now() / 1000);
       const expiresIn = 60 * 60 * 24 * 7; // 7일 후 만료
-
-      if (user) {
-        token.id = user.id;
-        token.exp = now + expiresIn; // 항상 7일로 설정
-        token.iat = now;
-      } else if (!token.exp || Number(token.exp) > now + expiresIn) {
-        // 기존 exp가 너무 길다면 재설정
-        token.exp = now + expiresIn;
-        token.iat = now;
-      }
+      token.id = user?.id || "default_id";
+      token.exp = now + expiresIn; // 항상 7일로 설정
+      token.iat = now;
       return token;
     },
     async session({ session, token }) {
+      // console.log("🔹 session() 콜백에서 받은 token:", token); // 디버깅 로그 추가
+    
+      // if (!token.id) {
+      //   console.error("⚠️ token.id가 존재하지 않습니다! session.user.id가 비어있을 수 있음.");
+      // }
+    
       const extendedSession: ExtendedSession = session as ExtendedSession;
-      if (!extendedSession.user || !extendedSession.user.id) {
-        // 빈 객체 대신 기본값을 포함한 객체로 초기화합니다.
-        extendedSession.user = {
-          id: "",
-          name: null,
-          email: null,
-          image: null,
-        };
-      }
       extendedSession.user = {
-        id: String(token.id),
-        name: String(token.name),
-        email: String(token.email),
-        image: String(token.picture),
-        token: String(token.jti) || "",
+        id: token.id ? String(token.id) : "error_no_id",
+        name: token.name ? String(token.name) : null,
+        email: token.email ? String(token.email) : null,
+        image: token.picture ? String(token.picture) : null,
       };
+    
+      // console.log("🔹 최종 Session Data:", extendedSession); // 🔍 디버깅 로그 추가
       return extendedSession;
-    },
+    }
+  },
+  session: {
+    strategy: "jwt", // 세션을 JWT 기반으로 설정
+    maxAge: 60 * 60 * 24 * 7, // 7일 (단위: 초)
   },
 };

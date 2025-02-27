@@ -1,19 +1,14 @@
+import { exitChatRoom } from "@/api/exitChatRoom";
 import { useEffect } from "react";
 
 const useAutoExitChat = (userId: string, roomId: string) => {
   useEffect(() => {
-    const leaveChatRoom = async () => {
-      await fetch(`/api/chat/leave`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, roomId }),
-      });
-    };
+    
 
-    const handleUnload = () => leaveChatRoom();
+    const handleUnload = () => exitChatRoom(roomId, userId);
     const handleVisibilityChange = () => {
       if (document.visibilityState === "hidden") {
-        leaveChatRoom();
+        exitChatRoom(roomId, userId);
       }
     };
 
@@ -24,7 +19,7 @@ const useAutoExitChat = (userId: string, roomId: string) => {
 
     //컴포넌트가 언마운트될 때 이벤트 리스너 제거
     return () => {
-      leaveChatRoom();
+      exitChatRoom(roomId, userId);
       window.removeEventListener("beforeunload", handleUnload);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
